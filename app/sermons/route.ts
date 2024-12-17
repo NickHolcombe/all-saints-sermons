@@ -1,7 +1,7 @@
 import RSS from "rss"
 
 
-const TTL = 60 // Number of minutes feed can be cached before refreshing from source.
+
 
 export async function GET() {
 
