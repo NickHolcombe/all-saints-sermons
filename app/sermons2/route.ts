@@ -26,8 +26,13 @@ export async function GET() {
                 ]},
             {'itunes:category': [
                     {_attr: {
-                            text: 'Sermon Media'
+                            text: 'Religion & Spirituality'
                         }},
+                    {'itunes:category': {
+                            _attr: {
+                                text: 'Christianity'
+                            }
+                        }}
                 ]}
         ]
     });
