@@ -1,6 +1,10 @@
 import RSS from "rss"
+import {fetchASItunesFeed, fetchASSecondaryFeed} from "@/app/sermons/utils";
 
 export async function GET() {
+    const asITunesFeed = await fetchASItunesFeed()
+    const secondaryDict = await fetchASSecondaryFeed()
+    
     // TODO: add TTL back in
     const feed = new RSS({
         title: 'All Saints Church Crowborough',
@@ -8,7 +12,7 @@ export async function GET() {
         generator: 'RSS for Node and Next.js',
         feed_url: 'https://all-saints-sermons.vercel.app/sermons',
         site_url: 'https://www.allsaintscrowborough.org',
-        managingEditor: 'office@allsaintscrowborough.org (Nick Holcombe)',
+        managingEditor: 'office@allsaintscrowborough.org (Church Office)',
         webMaster: 'office@allsaintscrowborough.org (Nick Holcombe)',
         copyright: `Copyright ${new Date().getFullYear().toString()}, Nick Holcombe`,
         language: 'en-US',
@@ -19,10 +23,10 @@ export async function GET() {
         },
         custom_elements: [
             {'itunes:explicit': 'false'},
-            {'itunes:author': 'Nick Holcombe'},
+            {'itunes:author': 'Church Office'},
             {'itunes:summary': 'All Saints Church Sermon Media'},
             {'itunes:owner': [
-                    {'itunes:name': 'Adrian Bailey'},
+                    {'itunes:name': 'Church Office'},
                     {'itunes:email': 'office@allsaintscrowborough.org'}
                 ]},
             {'itunes:category': [
@@ -38,24 +42,39 @@ export async function GET() {
         ]
     });
 
-    feed.item({
-        title:  '[Advent 2024] The seals',
-        description: 'Advent 2024 sermon series description',
-        url: 'https://www.allsaintscrowborough.org/Media/Player.aspx?media_id=334330&amp;fullpage=True', // link to the item
-        date: 'Sun, 15 Dec 2024 12:00:00 GMT', // any format that js Date can parse.
-        guid: 'm_334330',
-        custom_elements: [
-            {'itunes:author': 'Pete Winstone'},
-            {'itunes:subtitle': 'Sermon subtitle'},
-            {'itunes:summary': 'Advent 2024 sermon series summary'},
-            {'itunes:duration': '00:28:23'},
-            {'itunes:image': {
-                    _attr: {
-                        href: 'https://raw.githubusercontent.com/AllSaintsCrowborough/sermon-feed/refs/heads/main/revelation.jpg'
-                    }
-                }},
-            {'enclosure url="https://s3.us-east-1.amazonaws.com/media.1901.churchinsight.com/de2b5166-1ce4-4838-8a16-8a29f9d2c808.mp3" length="14037045" type="audio/mpeg"': {}}
-        ]
+    asITunesFeed.items.forEach(item => {
+        // console.log(item.title + ':' + item['itunes:author'])
+        const title = item.guid ? `[${item.description}] ${secondaryDict[item.guid].title }` : `[${item.description}] ${item.title}`
+        // const title = `[${item.description}] ${item.title}`
+        // TODO: Fetch sermon image from somewhere (other rss feed)
+        let imageUrl = "https://allsaintscrowborough.org/Images/Content/1901/Thumbnail/1346597.jpeg"
+        if (item.guid) {
+            const secondaryItem = secondaryDict[item.guid]
+            const thumbnail = secondaryItem["media:thumbnail"]
+            if (thumbnail.url !== undefined) {
+                imageUrl = thumbnail.url
+            }
+        }
+
+        feed.item({
+            title: title,
+            description: item.description,
+            url: item.link ?? '', // link to the item
+            date:  item.pubDate ?? '', // any format that js Date can parse.
+            guid: item.guid,
+            custom_elements: [
+                {'itunes:author': `${item['itunes:author']}`},
+                {'itunes:subtitle': 'Sermon subtitle'},
+                {'itunes:summary': `${item['itunes:summary']}`},
+                {'itunes:duration': `${item['itunes:duration']}`},
+                {'itunes:image': {
+                        _attr: {
+                            href: imageUrl
+                        }
+                    }},
+            ],
+            enclosure: item.enclosure,
+        });
     });
 
     return new Response(feed.xml({ indent: true }), {
