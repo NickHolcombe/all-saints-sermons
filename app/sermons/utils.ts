@@ -6,7 +6,7 @@ type CustomItem = {
     "itunes:author": string
     "itunes:summary": string
     "itunes:duration": string
-    "media:thumbnail": { url: string }
+    "media:thumbnail": { $: { url: string }}
 };
 type ASFeedType = CustomFeed & Parser.Output<CustomItem>
 
