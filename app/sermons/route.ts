@@ -4,8 +4,8 @@ import {fetchASItunesFeed, fetchASSecondaryFeed} from "@/app/sermons/utils";
 export async function GET() {
     const asITunesFeed = await fetchASItunesFeed()
     const secondaryDict = await fetchASSecondaryFeed()
-    
-    // TODO: add TTL back in
+    const TTL_IN_MINUTES = 60
+
     const feed = new RSS({
         title: 'All Saints Church Crowborough',
         description: 'All Saints Church Crowborough Media',
@@ -16,6 +16,7 @@ export async function GET() {
         webMaster: 'office@allsaintscrowborough.org (Nick Holcombe)',
         copyright: `Copyright ${new Date().getFullYear().toString()}, Nick Holcombe`,
         language: 'en-US',
+        ttl: TTL_IN_MINUTES,
         categories: ['Sermon Media'],
         pubDate: new Date().toUTCString(),
         custom_namespaces: {
@@ -43,16 +44,13 @@ export async function GET() {
     });
 
     asITunesFeed.items.forEach(item => {
-        // console.log(item.title + ':' + item['itunes:author'])
-        const title = item.guid ? `[${item.description}] ${secondaryDict[item.guid].title }` : `[${item.description}] ${item.title}`
-        // const title = `[${item.description}] ${item.title}`
-        // TODO: Fetch sermon image from somewhere (other rss feed)
+        const secondaryItem = item.guid ? secondaryDict[item.guid] : null
+        const title = `[${item.description}] ${secondaryItem ? secondaryItem.title : item.title}`
         let imageUrl = "https://allsaintscrowborough.org/Images/Content/1901/Thumbnail/1346597.jpeg"
-        if (item.guid) {
-            const secondaryItem = secondaryDict[item.guid]
+        if (secondaryItem) {
             const thumbnail = secondaryItem["media:thumbnail"]
-            if (thumbnail.url !== undefined) {
-                imageUrl = thumbnail.url
+            if (thumbnail.$.url) {
+                imageUrl = thumbnail.$.url
             }
         }
 
